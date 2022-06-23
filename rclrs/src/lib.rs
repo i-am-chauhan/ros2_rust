@@ -40,8 +40,10 @@ pub fn spin_once(node: &Node, timeout: Option<Duration>) -> Result<(), RclrsErro
     };
     let mut wait_set = WaitSet::new(live_subscriptions.len(), &ctx)?;
 
-    for live_subscription in &live_subscriptions {
-        wait_set.add_subscription(live_subscription.clone())?;
+    for live_subscription in live_subscriptions {
+        // SAFETY: The implementation of this trait function guarantees that the subscription
+        // is not part of any other wait set. (TODO: issue #207)
+        unsafe { live_subscription.add_to_wait_set(&mut wait_set)? };
     }
 
     let ready_entities = wait_set.wait(timeout)?;
